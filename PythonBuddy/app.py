@@ -18,9 +18,7 @@ from multiprocessing import Pool, cpu_count
 
 
 def is_os_linux():
-    if os.name == "nt":
-        return False
-    return True
+    return os.name != "nt"
 
 # Configure Flask App
 # Remember to change the SECRET_KEY!
@@ -85,7 +83,7 @@ def run_code():
     session["time_now"] = datetime.now()
 
     output = None
-    if not "file_name" in session:
+    if "file_name" not in session:
         with tempfile.NamedTemporaryFile(delete=False) as temp:
             session["file_name"] = temp.name
     cmd = 'python ' + session["file_name"]
@@ -99,9 +97,7 @@ def run_code():
 def slow():
     session["count"] += 1
     time = datetime.now() - session["time_now"]
-    if float(session["count"]) / float(time.total_seconds()) > 5:
-        return True
-    return False
+    return float(session["count"]) / float(time.total_seconds()) > 5
 
 def evaluate_pylint(text):
     """Create temp files for pylint parsing on user code
@@ -184,7 +180,7 @@ def process_error(error):
         try:
             line_num = error.split(":")[1]
         except Exception as e:
-            print(os.name + " not compatible: " + e)
+            print(f"{os.name} not compatible: {e}")
     else:
         line_num = error.split(":")[2]
 
@@ -194,7 +190,7 @@ def process_error(error):
     # error_code=None
     while i < length:
         word = list_words[i]
-        if (word == "error" or word == "warning") and first_time:
+        if word in ["error", "warning"] and first_time:
             error_yet = True
             first_time = False
             i += 1
@@ -202,7 +198,7 @@ def process_error(error):
         if error_yet:
             error_code = word[1:-1]
             error_string = list_words[i + 1][:-1]
-            i = i + 3
+            i += 3
             error_yet = False
             message_yet = True
             continue
